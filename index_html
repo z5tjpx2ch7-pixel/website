@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>환경-건강 모니터 | Heal the Earth, Heal Ourselves</title>
+<style>
+  /* ===== Reset & base ===== */
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body,#app { height: 100%; }
+  body {
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", Roboto, Arial;
+    background: linear-gradient(180deg,#f6fffb 0%, #f0fbff 40%, #ffffff 100%);
+    color:#10333b;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    line-height:1.45;
+  }
+  a { color:inherit; text-decoration:none; }
+
+  /* ===== Layout ===== */
+  #app {
+    display: grid;
+    grid-template-columns: 350px 1fr 360px;
+    grid-template-rows: 84px 1fr;
+    gap: 16px;
+    padding: 18px;
+    height:100vh;
+    align-items: start;
+  }
+  header {
+    grid-column: 1 / 4;
+    height: 84px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    border-radius:14px;
+    padding: 14px 20px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
+    box-shadow: 0 6px 20px rgba(16,51,59,0.06);
+    backdrop-filter: blur(6px);
+  }
+  .brand {
+    display:flex; align-items:center; gap:12px;
+  }
+  .logo {
+    width:54px; height:54px; display:grid; place-items:center;
+    background:linear-gradient(180deg,#a6f0d6,#6fe4c2);
+    border-radius:12px; box-shadow: 0 4px 10px rgba(15,60,57,0.08);
+  }
+  .logo svg { width:34px; height:34px; }
+  h1 { font-size:18px; letter-spacing:0.2px; color:#073237; }
+  p.subtitle { font-size:12px; color:#2b6b6b; opacity:0.85; margin-top:4px; }
+
+  /* ===== Left column (Controls & Profile) ===== */
+  .panel {
+    background: white;
+    border-radius:12px;
+    padding:16px;
+    height: calc(100% - 0px);
+    box-shadow: 0 8px 24px rgba(16,51,59,0.04);
+    overflow:auto;
+  }
+  .panel h2 { font-size:15px; color:#0b3b3d; margin-bottom:10px; }
+  .profile .field { margin-bottom:10px; }
+  label { display:block; font-size:12px; color:#356b68; margin-bottom:6px; }
+  input[type="text"], select {
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6f3f1;
+    background:#fbfffe;
+  }
+  .checkbox-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip {
+    padding:8px 10px; border-radius:20px; border:1px solid #e4f4f0; background:#fbfffe;
+    font-size:13px; color:#0f4d4a; cursor:pointer;
+  }
+  .chip.active { background: linear-gradient(90deg,#e8fff7,#d1fff0); box-shadow: inset 0 -2px 6px rgba(6,60,54,0.05); }
+
+  .btn {
+    display:inline-block; padding:10px 14px; border-radius:10px; font-weight:600;
+    background:#12b39a; color:white; cursor:pointer; border:none;
+  }
+  .muted { color:#5d8b88; font-size:13px; }
+
+  /* ===== Middle column (Main dashboard) ===== */
+  main {
+    padding:8px;
+    height:100%;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .card {
+    background: white; border-radius:12px; padding:18px; box-shadow:0 8px 20px rgba(16,51,59,0.04);
+  }
+  .aqi-row {
+    display:flex; gap:18px; align-items:center;
+  }
+  .gauge {
+    width:220px; height:220px; display:grid; place-items:center; position:relative;
+  }
+  .gauge svg { width:100%; height:100%; transform: rotate(-90deg); }
+  .gauge .center {
+    position:absolute; text-align:center;
+    transform: translateY(-6px);
+  }
+  .gauge .center .val { font-size:28px; font-weight:700; color:#053637; }
+  .gauge .center .label { font-size:13px; color:#256b66; margin-top:4px; }
+
+  .tips { flex:1; display:flex; flex-direction:column; gap:8px; }
+  .tips .title { font-size:14px; font-weight:700; color:#0b3b3d; }
+  .tips ul { margin-top:8px; display:grid; gap:8px; }
+
+  /* heatmap */
+  .map { display:grid; grid-template-columns: repeat(6,1fr); gap:8px; margin-top:8px;}
+  .map .cell {
+    height:72px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    color:white; font-weight:700; cursor:pointer; font-size:12px;
+  }
+  /* legend */
+  .legend { display:flex; gap:8px; margin-top:10px; align-items:center; font-size:13px; color:#356b68; }
+
+  /* right column (cards: solution, actions, logs) */
+  .right-col { display:flex; flex-direction:column; gap:16px; height:calc(100% - 0px); overflow:auto; padding:0; }
+  .action-cards { display:grid; gap:12px; }
+  .action-card {
+    display:flex; gap:12px; align-items:center; justify-content:space-between;
+    padding:12px; border-radius:10px; background:linear-gradient(180deg,#fbfffe,#f0fff9);
+    border:1px solid #e6f8f0;
+  }
+  .mission { display:flex; gap:10px; align-items:center; }
+  .mission .done { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; background:#dff8ef; color:#0b6a59; font-weight:700; }
+
+  .log-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .log-item { padding:10px; border-radius:10px; background:#fcfffd; border:1px solid #eef9f4; font-size:13px; color:#144b47; }
+
+  footer.small {
+    font-size:12px; color:#2f6e6a; opacity:0.9; margin-top:12px;
+  }
+
+  /* responsive */
+  @media (max-width: 1100px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: 84px auto 1fr; padding:10px; gap:10px; }
+    header { grid-column: auto; }
+    main { order:3; }
+    .panel, .right-col { order:1; }
+    .right-col { flex-direction:row; overflow:auto; gap:10px; }
+    .right-col .card { min-width:300px; }
+  }
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <!-- leaf + heartbeat icon -->
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 34c6-14 20-22 28-22-8 6-12 14-12 24 0 11-8 12-16 6 3-2 0-8 0-8z" fill="#073237" opacity="0.08"/>
+          <path d="M20 44c-1-8 5-18 14-22" stroke="#074b46" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M38 30c6-2 10-1 14 3" stroke="#0aa38f" stroke-width="2.8" stroke-linecap="round"/>
+          <path d="M20 44 L26 34 L30 40 L34 32 L38 44" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>HEAL THE EARTH, HEAL OURSELVES</h1>
+        <p class="subtitle">환경 데이터 × 개인 건강 — 즉각적인 권장수칙을 제공합니다</p>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div style="text-align:right">
+        <div style="font-size:13px; color:#275a58; font-weight:700" id="cityLabel">서울 (샘플)</div>
+        <div class="muted" id="lastUpdated">시뮬레이션 데이터</div>
+      </div>
+      <button class="btn" id="shareBtn">공유</button>
+    </div>
+  </header>
+
+  <!-- left panel: profile & controls -->
+  <aside class="panel profile" aria-labelledby="profileTitle">
+    <h2 id="profileTitle">나의 건강 프로필</h2>
+    <div class="field">
+      <label for="name">이름</label>
+      <input id="name" type="text" placeholder="홍길동" />
+    </div>
+    <div class="field">
+      <label for="age">나이</label>
+      <input id="age" type="text" placeholder="16" />
+    </div>
+    <div class="field">
+      <label>기저질환 (해당하면 선택)</label>
+      <div class="checkbox-row" id="conditionsRow">
+        <div class="chip" data-val="asthma">천식</div>
+        <div class="chip" data-val="allergy">알레르기</div>
+        <div class="chip" data-val="cardio">심혈관 질환</div>
+        <div class="chip" data-val="none">없음</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn" id="saveProfile">프로필 저장</button>
+      <button class="btn" id="useGeo" style="background:#2b98b3; margin-left:8px;">내 위치 사용</button>
+    </div>
+
+    <hr style="margin:14px 0; border:none; height:1px; background:#f0f9f7;">
+
+    <h2>증상 기록</h2>
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <select id="symptomSelect">
+        <option value="cough">기침</option>
+        <option value="breath">숨가쁨</option>
+        <option value="eye">눈 자극</option>
+        <option value="none">특이사항 없음</option>
+      </select>
+      <button class="btn" id="logSymptom">기록하기</button>
+    </div>
+    <div id="logs" class="log-list" aria-live="polite">
+      <!-- logs appended here -->
+    </div>
+
+    <footer class="small">
+      이 페이지는 교육/데모용입니다. 실제 의료진의 진단을 대신하지 않습니다.
+    </footer>
+  </aside>
+
+  <!-- main -->
+  <main>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:13px; color:#2d6f6b; font-weight:700;">오늘의 대기질(시뮬레이션)</div>
+          <div style="font-size:12px; color:#2d6f6b;">지역의 실시간 수치를 바탕으로 건강권고를 제공합니다.</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="muted">AQI 기준: WHO 권고와 다를 수 있음</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px" class="aqi-row">
+        <div class="gauge" id="gauge">
+          <!-- SVG gauge will be rendered by JS -->
+          <div class="center">
+            <div class="val" id="aqiVal">—</div>
+            <div class="label" id="aqiLabel">불러오는 중</div>
+          </div>
+        </div>
+
+        <div class="tips">
+          <div class="title" id="riskTitle">건강 위험도: —</div>
+          <ul id="healthTips">
+            <!-- tips -->
+          </ul>
+
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="btn" id="refreshBtn" style="background:#0fa985;">새로고침</button>
+            <button class="btn" id="viewHistory" style="background:#2b98b3;">기록 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" aria-labelledby="mapTitle">
+      <h2 id="mapTitle">지역별 오염 히트맵</h2>
+      <div class="map" id="mapGrid" role="grid" aria-label="지역 오염 히트맵">
+        <!-- 6x? cells inserted by JS -->
+      </div>
+      <div class="legend" aria-hidden="true">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div style="width:18px;height:18px;background:#1b9b8a;border-radius:4px;"></div> 좋음
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div style="width:18px;height:18px;background:#f9c74f;border-radius:4px;"></div> 보통
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div style="width:18px;height:18px;background:#f29c9c;border-radius:4px;"></div> 나쁨
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div style="width:18px;height:18px;background:#c04a4a;border-radius:4px;"></div> 매우 나쁨
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- right column -->
+  <aside class="right-col">
+    <div class="panel card">
+      <h2>해결 아이디어</h2>
+      <p style="color:#1b5654; margin-top:6px;">
+        개인 건강 데이터와 환경 데이터를 연동해 맞춤형 일상 권장수칙을 제공하는 웹 기반 모니터링 시스템입니다.
+      </p>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="padding:10px; background:#f7fffb; border-radius:10px; border:1px solid #e6f8f0;">
+          <strong>위치기반 AQI</strong><div class="muted">지역별 실시간 알림</div>
+        </div>
+        <div style="padding:10px; background:#fffaf7; border-radius:10px; border:1px solid #fff1e6;">
+          <strong>건강 프로필</strong><div class="muted">기저질환 맞춤 권고</div>
+        </div>
+        <div style="padding:10px; background:#f0f9ff; border-radius:10px; border:1px solid #e6f3ff;">
+          <strong>시민 참여</strong><div class="muted">오염 신고 & 실천 공유</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel card action-cards">
+      <h2>오늘의 실천</h2>
+      <div class="action-card">
+        <div class="mission">
+          <div class="done">1</div>
+          <div>
+            <div style="font-weight:700">텀블러 사용하기</div>
+            <div class="muted" style="font-size:13px;">일회용 컵 대신 텀블러 사용</div>
+          </div>
+        </div>
+        <div>
+          <input type="checkbox" id="m1"/>
+        </div>
+      </div>
+
+      <div class="action-card">
+        <div class="mission">
+          <div class="done">2</div>
+          <div>
+            <div style="font-weight:700">대중교통 이용</div>
+            <div class="muted" style="font-size:13px;">차량 사용 줄이기</div>
+          </div>
+        </div>
+        <div><input type="checkbox" id="m2"/></div>
+      </div>
+
+      <div class="action-card">
+        <div class="mission">
+          <div class="done">3</div>
+          <div>
+            <div style="font-weight:700">공기청정기 필터 점검</div>
+            <div class="muted" style="font-size:13px;">필터 교체 주기 확인</div>
+          </div>
+        </div>
+        <div><input type="checkbox" id="m3"/></div>
+      </div>
+    </div>
+
+    <div class="panel card">
+      <h2>건강 로그</h2>
+      <div id="miniLogs">
+        <!-- mini logs -->
+      </div>
+      <div style="margin-top:8px;">
+        <button class="btn" id="exportBtn" style="background:#0fa985;">내보내기(복사)</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/*
+  환경-건강 웹앱 (데모)
+  - 시뮬레이션 AQI 생성
+  - 개인 프로필 저장(localStorage)
+  - 증상 기록 및 실천 체크 저장
+  - 지역 히트맵 인터랙션
+*/
+
+/* ---------- Utilities ---------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+const rand = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+const formatTime = (d=new Date()) => d.toLocaleString();
+
+/* ---------- App state & initial ---------- */
+let state = {
+  city: "서울",
+  aqi: 42,
+  lastUpdated: null,
+  grid: [], // region cells
+  profile: {
+    name: "",
+    age: "",
+    conditions: []
+  },
+  logs: [],
+};
+
+const AQI_LABELS = [
+  {max:50, label:"좋음", color:"#1b9b8a", risk:"낮음"},
+  {max:100,label:"보통", color:"#f9c74f", risk:"보통"},
+  {max:200,label:"나쁨", color:"#f29c9c", risk:"높음"},
+  {max:500,label:"매우 나쁨", color:"#c04a4a", risk:"매우 높음"}
+];
+
+function getAqiLabel(value){
+  for(const l of AQI_LABELS) if(value<=l.max) return l;
+  return AQI_LABELS[AQI_LABELS.length-1];
+}
+
+/* ---------- Gauge rendering ---------- */
+function drawGauge(value){
+  const gauge = $("#gauge");
+  const size = 220;
+  const stroke = 18;
+  const radius = (size - stroke)/2;
+  const circumference = 2*Math.PI*radius;
+  const percent = Math.min(1, Math.max(0, value / 500)); // normalized
+  const dash = circumference * percent;
+  const color = getAqiLabel(value).color;
+
+  const svg = `
+    <svg viewBox="0 0 ${size} ${size}">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="1">
+          <stop offset="0%" stop-color="#bff7eb"/>
+          <stop offset="100%" stop-color="${color}"/>
+        </linearGradient>
+      </defs>
+      <circle cx="${size/2}" cy="${size/2}" r="${radius}" stroke="#e9f7f4" stroke-width="${stroke}" fill="none" />
+      <circle cx="${size/2}" cy="${size/2}" r="${radius}" stroke="url(#g1)" stroke-width="${stroke}" stroke-linecap="round"
+        stroke-dasharray="${dash} ${circumference-dash}" transform="rotate(0 ${size/2} ${size/2})" fill="none" />
+    </svg>
+  `;
+  gauge.innerHTML = svg + gauge.innerHTML.replace(/<svg[\s\S]*<\/svg>/, "");
+  $("#aqiVal").textContent = value;
+  const label = getAqiLabel(value).label;
+  $("#aqiLabel").textContent = label;
+  $("#riskTitle").textContent = `건강 위험도: ${getAqiLabel(value).risk}`;
+}
+
+/* ---------- Health tips generation ---------- */
+function generateTips(aqi, profile){
+  const lbl = getAqiLabel(aqi).label;
+  const tips = [];
+  if(aqi<=50){
+    tips.push("야외 활동 권장 — 가벼운 운동은 괜찮습니다.");
+  } else if(aqi<=100){
+    tips.push("장시간 격렬한 야외 활동 자제.");
+    tips.push("실내 환기 시, 외부 미세먼지 수치를 확인하세요.");
+  } else if(aqi<=200){
+    tips.push("특히 기저질환자, 노약자는 실외 활동을 제한하세요.");
+    tips.push("마스크 착용(보건용 권장) 및 실내 공기정화 권장.");
+  } else {
+    tips.push("모든 사람은 실외 활동을 피하세요. 실내 공기질 관리가 필요합니다.");
+    tips.push("유아, 노약자, 호흡기/심혈관 질환자는 즉시 의료상담을 고려하세요.");
+  }
+  if(profile.conditions.includes("asthma")){
+    tips.unshift("천식 환자는 흡입기 사용 계획을 재확인하세요.");
+  }
+  if(profile.conditions.includes("allergy")){
+    tips.push("눈·코 염증 증상시 세안 및 치료제를 사용하세요.");
+  }
+  return tips;
+}
+
+/* ---------- Map grid ---------- */
+function initGrid(){
+  const gridEl = $("#mapGrid");
+  gridEl.innerHTML = "";
+  state.grid = [];
+  // create 12 sample cells (2 rows x 6 cols)
+  for(let i=0;i<12;i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const aqi = rand(20,250);
+    state.grid.push({id:i, name:`구역 ${i+1}`, aqi});
+    cell.dataset.idx = i;
+    cell.textContent = `구역 ${i+1}`;
+    const lbl = getAqiLabel(aqi);
+    cell.style.background = lbl.color;
+    cell.title = `${cell.textContent} — AQI ${aqi} (${lbl.label})`;
+    cell.addEventListener("click", () => {
+      showRegionDetail(i);
+    });
+    gridEl.appendChild(cell);
+  }
+}
+
+/* ---------- Interactions: region click ---------- */
+function showRegionDetail(idx){
+  const region = state.grid[idx];
+  const lbl = getAqiLabel(region.aqi);
+  const message = `${region.name}\nAQI: ${region.aqi} (${lbl.label})\n권고: ${lbl.risk === "낮음" ? "야외 활동 가능" : lbl.risk === "보통" ? "주의" : "실외활동 제한 권고"}`;
+  const todaysTips = generateTips(region.aqi, state.profile);
+  // simple modal-like (alert) for demo
+  alert(`${message}\n\n권장 수칙:\n- ${todaysTips.join("\n- ")}`);
+}
+
+/* ---------- Profile save / load ---------- */
+function loadProfile(){
+  const raw = localStorage.getItem("eh_profile");
+  if(raw){
+    state.profile = JSON.parse(raw);
+  }
+  $("#name").value = state.profile.name || "";
+  $("#age").value = state.profile.age || "";
+  // chips
+  $$("#conditionsRow .chip").forEach(chip => {
+    const val = chip.dataset.val;
+    if(state.profile.conditions.includes(val)) chip.classList.add("active");
+    else chip.classList.remove("active");
+  });
+}
+function saveProfile(){
+  state.profile.name = $("#name").value.trim();
+  state.profile.age = $("#age").value.trim();
+  const conditions = [];
+  $$("#conditionsRow .chip.active").forEach(c => {
+    if(c.dataset.val && c.dataset.val!=="none") conditions.push(c.dataset.val);
+  });
+  state.profile.conditions = conditions;
+  localStorage.setItem("eh_profile", JSON.stringify(state.profile));
+  alert("프로필이 저장되었습니다.");
+  renderMiniLogs();
+}
+
+/* ---------- Symptoms logging ---------- */
+function loadLogs(){
+  const raw = localStorage.getItem("eh_logs");
+  state.logs = raw ? JSON.parse(raw) : [];
+  renderLogs();
+}
+function logSymptom(symptom){
+  const t = {symptom, time: new Date().toISOString()};
+  state.logs.unshift(t);
+  localStorage.setItem("eh_logs", JSON.stringify(state.logs));
+  renderLogs();
+  renderMiniLogs();
+}
+function renderLogs(){
+  const container = $("#logs");
+  container.innerHTML = "";
+  if(state.logs.length===0) {
+    container.innerHTML = `<div class="muted">아직 기록이 없습니다.</div>`;
+    return;
+  }
+  state.logs.slice(0,30).forEach(l => {
+    const div = document.createElement("div");
+    div.className = "log-item";
+    div.textContent = `${formatTime(new Date(l.time))} — ${symptomLabel(l.symptom)}`;
+    container.appendChild(div);
+  });
+}
+function renderMiniLogs(){
+  const m = $("#miniLogs");
+  m.innerHTML = "";
+  state.logs.slice(0,5).forEach(l => {
+    const div = document.createElement("div");
+    div.className = "muted";
+    div.textContent = `${formatTime(new Date(l.time))} — ${symptomLabel(l.symptom)}`;
+    m.appendChild(div);
+  });
+}
+
+/* ---------- Symptom label map ---------- */
+function symptomLabel(key){
+  const map = {
+    cough: "기침",
+    breath: "숨가쁨",
+    eye: "눈 자극",
+    none: "특이사항 없음"
+  };
+  return map[key] || key;
+}
+
+/* ---------- Simulation: update AQI periodically ---------- */
+function simulateAqi(){
+  // simulate about +/- 10% fluctuation
+  const base = rand(30,160);
+  state.aqi = base;
+  state.lastUpdated = new Date().toISOString();
+  // update gauge and tips based on profile
+  drawGauge(state.aqi);
+  const tips = generateTips(state.aqi, state.profile);
+  const tipsEl = $("#healthTips");
+  tipsEl.innerHTML = "";
+  tips.forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = "• " + t;
+    li.style.color = "#14504b";
+    tipsEl.appendChild(li);
+  });
+  $("#cityLabel").textContent = state.city + " (샘플)";
+  $("#lastUpdated").textContent = "업데이트: " + formatTime(new Date(state.lastUpdated));
+  // update map with slight randomness
+  state.grid.forEach(g => {
+    g.aqi = Math.max(10, Math.min(300, g.aqi + rand(-12,12)));
+  });
+  // re-render map colors
+  $$("#mapGrid .cell").forEach(cell => {
+    const idx = Number(cell.dataset.idx);
+    const aqi = state.grid[idx].aqi;
+    cell.style.background = getAqiLabel(aqi).color;
+    cell.title = `${cell.textContent} — AQI ${aqi} (${getAqiLabel(aqi).label})`;
+  });
+}
+
+/* ---------- Save missions (checkboxes) ---------- */
+function loadMissions(){
+  ["m1","m2","m3"].forEach(id=>{
+    const el = $("#"+id);
+    const val = localStorage.getItem("eh_mis_"+id);
+    el.checked = val === "1";
+    el.addEventListener("change", () => {
+      localStorage.setItem("eh_mis_"+id, el.checked ? "1" : "0");
+    });
+  });
+}
+
+/* ---------- Share / export ---------- */
+async function shareApp(){
+  const text = `내 지역(${state.city}) 오늘의 AQI: ${state.aqi}\n건강 권고: ${getAqiLabel(state.aqi).label}\n(환경-건강 모니터 데모)`;
+  if(navigator.share){
+    try{
+      await navigator.share({title:"환경-건강 모니터", text});
+    }catch(e){
+      alert("공유가 취소되었습니다.");
+    }
+  } else {
+    // fallback copy to clipboard
+    await navigator.clipboard.writeText(text);
+    alert("요약 내용이 클립보드에 복사되었습니다.");
+  }
+}
+function exportLogs(){
+  const txt = state.logs.map(l=>`${formatTime(new Date(l.time))}\t${symptomLabel(l.symptom)}`).join("\n");
+  navigator.clipboard.writeText(txt).then(()=> {
+    alert("건강 로그가 복사되었습니다. (클립보드)");
+  });
+}
+
+/* ---------- Geolocation (optional) ---------- */
+function tryGeolocation(){
+  if(!navigator.geolocation){
+    alert("이 브라우저는 위치정보를 지원하지 않습니다.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition((pos) => {
+    // for demo, set city label based on coords (no reverse geocoding)
+    state.city = `위치(${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
+    alert("위치 정보를 불러왔습니다. (데모: 실제 AQI 연동은 필요)");
+    saveProfile();
+    simulateAqi();
+  }, (err) => {
+    alert("위치 정보를 가져오지 못했습니다: " + err.message);
+  }, {timeout:8000});
+}
+
+/* ---------- Event bindings ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  initGrid();
+  loadProfile();
+  loadLogs();
+  loadMissions();
+  simulateAqi();
+  drawGauge(state.aqi);
+
+  // periodic simulate (every 10s for demo)
+  setInterval(simulateAqi, 10000);
+
+  // chips
+  $$("#conditionsRow .chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      // toggle active; if 'none' selected, clear others
+      if(chip.dataset.val === "none"){
+        // remove active from others
+        $$("#conditionsRow .chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+      } else {
+        // remove none
+        $$("#conditionsRow .chip[data-val='none']").forEach(c=>c.classList.remove("active"));
+        chip.classList.toggle("active");
+      }
+    });
+  });
+
+  $("#saveProfile").addEventListener("click", saveProfile);
+  $("#logSymptom").addEventListener("click", () => {
+    const s = $("#symptomSelect").value;
+    logSymptom(s);
+  });
+  $("#refreshBtn").addEventListener("click", () => {
+    simulateAqi();
+    alert("데이터를 새로고침했습니다. (시뮬레이션)");
+  });
+  $("#viewHistory").addEventListener("click", () => {
+    window.scrollTo({top:document.body.scrollHeight, behavior:"smooth"});
+    alert("기록 섹션으로 이동합니다.");
+  });
+  $("#shareBtn").addEventListener("click", shareApp);
+  $("#exportBtn").addEventListener("click", exportLogs);
+  $("#useGeo").addEventListener("click", tryGeolocation);
+});
+</script>
+</body>
+</html>
